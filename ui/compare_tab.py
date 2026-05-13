@@ -24,7 +24,9 @@ class CompareTab(ctk.CTkFrame):
 
         self.mode_selector = ctk.CTkSegmentedButton(
             sidebar,
-            values=["Toggle", "Side-by-side", "Overlay"],
+            # values=["Toggle", "Side-by-side", "Overlay"], <-- no need for the side-by-side view
+            values=["Toggle", "Overlay"],
+
             variable=self.compare_mode,
             command=self.update_view
         )

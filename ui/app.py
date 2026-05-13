@@ -3,6 +3,7 @@ from ui.compare_tab import CompareTab
 from ui.diff_tab import DiffTab
 from pathlib import Path
 from PIL import Image
+from core.image_loader import discover_images
 
 
 class ImageCompareApp(ctk.CTk):
@@ -36,15 +37,28 @@ class ImageCompareApp(ctk.CTk):
 
         self.load_first_image()
 
-        self.bind("<Key>", self.handle_keys)
+        self.bind_all("<Key>", self.handle_keys)
 
     def load_first_image(self):
-        files = list(self.gt_dir.glob("*"))
-        if not files:
+        from core.image_loader import discover_images
+
+    def load_first_image(self):
+        # Discover files in both folders
+        self.gt_files = discover_images(self.gt_dir, {".png", ".jpg", ".jpeg"})
+        self.out_files = discover_images(self.out_dir, {".png", ".jpg", ".jpeg"})
+
+        # Find matching files
+        common = sorted(set(self.gt_files.keys()) & set(self.out_files.keys()))
+
+        if not common:
+            print("No matching images found")
             return
 
-        self.current_file = files[0].name
+        # ✅ THIS is where file_list is defined
+        self.file_list = common
 
+        # Start at first image
+        self.current_file = self.file_list[0]
         self.load_current()
 
     def load_current(self):
@@ -52,6 +66,16 @@ class ImageCompareApp(ctk.CTk):
         output_img = Image.open(self.out_dir / self.current_file)
 
         self.compare_tab.load_images(input_img, output_img)
+
+    def next_image(self):
+        current_index = self.file_list.index(self.current_file)
+        self.current_file = self.file_list[(current_index + 1) % len(self.file_list)]
+        self.load_current()
+
+    def prev_image(self):
+        current_index = self.file_list.index(self.current_file)
+        self.current_file = self.file_list[(current_index - 1) % len(self.file_list)]
+        self.load_current()
 
     def handle_keys(self, event):
         key = event.keysym.lower()
@@ -63,4 +87,13 @@ class ImageCompareApp(ctk.CTk):
         elif key == "space":
             self.compare_tab.canvas.reset_view()
 
+        elif key == "left":
+            self.prev_image()
+        elif key == "right":
+            self.next_image()
+
+
         self.compare_tab.update_view()
+        
+        return "break"
+

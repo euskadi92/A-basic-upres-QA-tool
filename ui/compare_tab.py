@@ -16,11 +16,11 @@ class CompareTab(ctk.CTkFrame):
 
     def _build_ui(self):
         self.grid_columnconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(2, weight=1)
 
         # Sidebar
         sidebar = ctk.CTkFrame(self, width=300)
-        sidebar.grid(row=0, column=0, sticky="ns")
+        sidebar.grid(row=2, column=0, sticky="ns")
 
         self.mode_selector = ctk.CTkSegmentedButton(
             sidebar,
@@ -41,10 +41,29 @@ class CompareTab(ctk.CTkFrame):
         )
         self.slider.pack(padx=10, pady=5, fill="x")
 
+        nav_frame = ctk.CTkFrame(sidebar)
+        nav_frame.pack(padx=10, pady=10, fill="x")
+
+        ctk.CTkButton(
+            nav_frame,
+            text="Previous",
+            command=self.controller.prev_image
+        ).pack(side="left", expand=True, fill="x", padx=(0, 5))
+
+        ctk.CTkButton(
+            nav_frame,
+            text="Next",
+            command=self.controller.next_image
+        ).pack(side="right", expand=True, fill="x", padx=(5, 0))
+
+        # Name of the image currently displayed
+        self.info_label = ctk.CTkLabel(self, text="", anchor="w")
+        self.info_label.grid(row=1, column=1, sticky="ew", padx=10, pady=(0, 5))
+
         # Canvas
         from ui.zoom_canvas import ZoomPanCanvas
         self.canvas = ZoomPanCanvas(self)
-        self.canvas.grid(row=0, column=1, sticky="nsew")
+        self.canvas.grid(row=2, column=1, sticky="nsew")
 
     def match_scale(self, input_img, output_img):
         """
@@ -62,6 +81,37 @@ class CompareTab(ctk.CTkFrame):
     def load_images(self, input_img: Image.Image, output_img: Image.Image):
         self.input, self.output = self.match_scale(input_img, output_img)
         self.update_view()
+
+    def update_info_label(self):
+        file_name = self.controller.current_file
+        mode = self.compare_mode.get()
+        view = self.controller.current_view
+
+        if mode == "Toggle":
+            if view == "input":
+                img = self.input
+                source = "Ground-truth"
+            else:
+                img = self.output
+                source = "Output"
+
+            width, height = img.size
+
+            text = f"{file_name} | {width} x {height} | {source}"
+
+        else:
+            # For side-by-side / overlay → show both
+            w1, h1 = self.input.size
+            w2, h2 = self.output.size
+
+            text = (
+                f"{file_name} | "
+                f"Input: {w1}x{h1} | Output: {w2}x{h2} | "
+                f"Mode: {mode}"
+            )
+
+        self.info_label.configure(text=text)
+
 
     def update_view(self):
         mode = self.compare_mode.get()
@@ -81,6 +131,8 @@ class CompareTab(ctk.CTkFrame):
             img = self.overlay(self.input, self.output, self.slider_value.get())
 
         self.canvas.set_image(img, reset=False)
+
+        self.update_info_label()
 
     def side_by_side(self, a, b):
         h = min(a.height, b.height)

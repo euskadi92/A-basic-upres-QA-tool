@@ -67,7 +67,12 @@ class CompareTab(ctk.CTkFrame):
         mode = self.compare_mode.get()
 
         if mode == "Toggle":
-            img = self.input if self.controller.current_view == "input" else self.output
+            #img = self.input
+            if self.controller.current_view == "input":
+                img = self.input
+
+            elif self.controller.current_view == "output":
+                img = self.output
 
         elif mode == "Side-by-side":
             img = self.side_by_side(self.input, self.output)

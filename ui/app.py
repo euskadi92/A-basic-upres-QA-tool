@@ -60,5 +60,7 @@ class ImageCompareApp(ctk.CTk):
             self.current_view = "input"
         elif key == "o":
             self.current_view = "output"
+        elif key == "space":
+            self.compare_tab.canvas.reset_view()
 
         self.compare_tab.update_view()

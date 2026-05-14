@@ -1,5 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
+import numpy as np
+
 
 
 class CompareTab(ctk.CTkFrame):
@@ -11,6 +13,9 @@ class CompareTab(ctk.CTkFrame):
 
         self.compare_mode = ctk.StringVar(value="Toggle")
         self.slider_value = ctk.DoubleVar(value=0.5)
+        
+        self.diff_cache = {}
+
 
         self._build_ui()
 
@@ -21,12 +26,12 @@ class CompareTab(ctk.CTkFrame):
         # Sidebar
         sidebar = ctk.CTkFrame(self, width=300)
         sidebar.grid(row=2, column=0, sticky="ns")
-
+        # VIEWER MODE BUTTONS
+        self.diff_label = ctk.CTkLabel(sidebar, text="--- VIEWER MODE ---", text_color="#246AD3")
+        self.diff_label.pack(padx=10, pady=(20,0), anchor="center")
         self.mode_selector = ctk.CTkSegmentedButton(
             sidebar,
-            # values=["Toggle", "Side-by-side", "Overlay"], <-- no need for the side-by-side view
             values=["Toggle", "Overlay"],
-
             variable=self.compare_mode,
             command=self.update_view
         )
@@ -38,8 +43,12 @@ class CompareTab(ctk.CTkFrame):
             to=1,
             variable=self.slider_value,
             command=lambda x: self.update_view()
-        )
-        self.slider.pack(padx=10, pady=5, fill="x")
+        )   
+        self.slider.pack(padx=10, pady=10, fill="x")
+
+        # NAVIGATION BUTTONS
+        self.diff_label = ctk.CTkLabel(sidebar, text="--- IMAGE NAVIGATION ---", text_color="#1FAF3F")
+        self.diff_label.pack(padx=10, pady=(20,0), anchor="center")
 
         nav_frame = ctk.CTkFrame(sidebar)
         nav_frame.pack(padx=10, pady=10, fill="x")
@@ -47,14 +56,35 @@ class CompareTab(ctk.CTkFrame):
         ctk.CTkButton(
             nav_frame,
             text="Previous",
-            command=self.controller.prev_image
+            command=self.controller.prev_image,
+            fg_color="#1FAF3F",
         ).pack(side="left", expand=True, fill="x", padx=(0, 5))
 
         ctk.CTkButton(
             nav_frame,
             text="Next",
-            command=self.controller.next_image
+            command=self.controller.next_image,
+            fg_color="#1FAF3F",
         ).pack(side="right", expand=True, fill="x", padx=(5, 0))
+
+        self.diff_opacity = ctk.DoubleVar(value=0.5)
+
+        # DIFF OPACITY BUTTONS
+        self.diff_label = ctk.CTkLabel(sidebar, text="--- DIFF OVERLAY OPACITY ---", text_color="#99531a")
+        self.diff_label.pack(padx=10, pady=(20,0), anchor="center")
+        self.diff_slider = ctk.CTkSlider(
+            sidebar,
+            from_=0.0,
+            to=1.0,
+            variable=self.diff_opacity,
+            button_color="#ff841f",
+            button_hover_color="#99531a",
+            command=lambda x: self.update_view()
+        )
+
+        self.diff_slider.pack(padx=10, pady=5, fill="x")
+
+        
 
         # Name of the image currently displayed
         self.info_label = ctk.CTkLabel(self, text="", anchor="w")
@@ -91,10 +121,12 @@ class CompareTab(ctk.CTkFrame):
             if view == "input":
                 img = self.input
                 source = "Ground-truth"
-            else:
+            elif view == "output":
                 img = self.output
                 source = "Output"
-
+            elif view == "diff":
+                img = self.diff_cache
+                source = "Output + Diff Overlay"
             width, height = img.size
 
             text = f"{file_name} | {width} x {height} | {source}"
@@ -123,6 +155,10 @@ class CompareTab(ctk.CTkFrame):
 
             elif self.controller.current_view == "output":
                 img = self.output
+
+            elif self.controller.current_view == "diff":
+                img = self.get_overlay_diff()
+
 
         elif mode == "Side-by-side":
             img = self.side_by_side(self.input, self.output)
@@ -157,3 +193,46 @@ class CompareTab(ctk.CTkFrame):
         out.paste(a.crop((0, 0, split, h)), (0, 0))
         out.paste(b.crop((split, 0, w, h)), (split, 0))
         return out
+
+
+    def get_overlay_diff(self):
+        file = self.controller.current_file
+
+        # base output image (what user sees)
+        base = self.output
+
+        # get diff image (heatmap)
+        diff_img = self.get_diff_image()
+
+        # resize diff to match base (safety)
+        if diff_img.size != base.size:
+            diff_img = diff_img.resize(base.size)
+
+        # convert to arrays
+        base_np = np.array(base).astype(np.float32)
+        diff_np = np.array(diff_img).astype(np.float32)
+
+        alpha = self.diff_opacity.get()
+
+        # blend
+        blended = (1 - alpha) * base_np + alpha * diff_np
+
+        return Image.fromarray(blended.astype(np.uint8))
+
+
+    def get_diff_image(self):
+        file = self.controller.current_file
+
+        # Use cache
+        if file in self.diff_cache:
+            return self.diff_cache[file]
+
+        # Compute diff
+        diff_img, _ = self.controller.diff_engine.compute(
+            file,
+            method="SSIM",   # or read from a global setting later
+            resample=self.controller.get_resample_filter()
+        )
+
+        self.diff_cache[file] = diff_img
+        return diff_img

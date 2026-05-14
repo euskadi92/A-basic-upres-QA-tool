@@ -3,17 +3,23 @@
 This tool was built to assess the quality of upscaled images in computer vision pipelines.
 
 It allows fast visual comparison between ground-truth and output images, enabling:
-- quick inspection of artifacts
-- consistent quality validation
-- efficient communication with stakeholders
+- Quick inspection of artifacts
+- QA for image upscaling pipelines (ML / super-resolution)
+- Efficient communication with stakeholders (incl. clients)
+- Visual validation of processing outputs
 
 ## Features
-- Define input and output folders for image comparisons
-- Pressing I/O toggles input/output to easily compare the quality between both images (Ground-truth images are resized to match the output resolution for accurate comparison using the [Lanczos](https://en.wikipedia.org/wiki/Lanczos_algorithm) algorithm)
-- Space bar to reset the canvas viewport
-- Arrow keys to move through the images (buttons are also available)
-- Multiple view methods: Toggle or Overlay with a selector to set the limit between both images
-- Coming soon: difference map generator to standardize quality errors assessments
+- Compare images from two folders (ground-truth vs output)
+- Instant toggle between input/output (`I / O`)
+    - (Ground-truth images are resized to match the output resolution for accurate comparison using the [Lanczos](https://en.wikipedia.org/wiki/Lanczos_algorithm) algorithm)
+- Overlay comparison mode (adjustable split)
+- Diff visualization using SSIM heatmaps
+- Diff overlay directly on output (`P` key)
+    - Intensity of the overlay can be adjusted with the slider
+- `Space` bar to reset the canvas viewport
+- Zoom & pan for detailed inspection
+- Navigation between images (keyboard or UI buttons)
+- On-screen image information (filename, resolution, source)
 
 ## Why did you make this tool?
 I made a similar tool when I was working as Technical ML Product Manager in a computer vision start-up in 2017. 
@@ -66,3 +72,4 @@ python main.py
 - CustomTkinter (UI)
 - Pillow (image processing)
 - scikit-image (metrics and comparisons)
+- NumPy / Matplotlib

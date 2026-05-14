@@ -19,19 +19,35 @@ class DiffEngine:
         gray = rgb2gray(arr)
         return img, img_as_float(gray)
 
-    def compute(self, rel_path, method="SSIM"):
+    def compute(self, rel_path, method="SSIM", resample=None):
         gt_path = self.gt_dir / rel_path
         out_path = self.out_dir / rel_path
 
         gt_img, gt_arr = self.load_image(gt_path)
         out_img, out_arr = self.load_image(out_path)
+        gt_img = gt_img.resize(out_img.size, resample)
+        gt_arr = rgb2gray(np.array(gt_img))
 
-        # Resize if needed (simple version)
-        h = min(gt_arr.shape[0], out_arr.shape[0])
-        w = min(gt_arr.shape[1], out_arr.shape[1])
 
-        gt_arr = gt_arr[:h, :w]
-        out_arr = out_arr[:h, :w]
+        # Resize ground-truth to match output size
+        # if gt_arr.shape != out_arr.shape:
+        #     from skimage.transform import resize
+
+        #     gt_arr = resize(
+        #         gt_arr,
+        #         out_arr.shape,
+        #         preserve_range=True,
+        #         anti_aliasing=True
+        #     )
+        gt_img = Image.open(gt_path).convert("RGB")
+        out_img = Image.open(out_path).convert("RGB")
+
+        if gt_img.size != out_img.size:
+            if resample is None:
+                resample = Image.LANCZOS
+
+            gt_img = gt_img.resize(out_img.size, resample)
+        
 
         # --- Metrics ---
         mse = float(np.mean((gt_arr - out_arr) ** 2))

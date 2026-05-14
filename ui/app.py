@@ -4,6 +4,8 @@ from ui.diff_tab import DiffTab
 from pathlib import Path
 from PIL import Image
 from core.image_loader import discover_images
+from core.diff_engine import DiffEngine
+from PIL import Image
 
 
 class ImageCompareApp(ctk.CTk):
@@ -16,9 +18,14 @@ class ImageCompareApp(ctk.CTk):
 
         self.current_view = "input"
         self.current_file = None
+        
+
 
         self.gt_dir = Path("ground-truth")
         self.out_dir = Path("output")
+
+        self.diff_engine = DiffEngine(self.gt_dir, self.out_dir)
+
 
         self._build_ui()
 
@@ -31,16 +38,19 @@ class ImageCompareApp(ctk.CTk):
         self.compare_tab = CompareTab(compare_frame, self)
         self.compare_tab.pack(fill="both", expand=True)
         
-        diff_frame = self.tabs.add("Diff")
-        self.diff_tab = DiffTab(diff_frame, self)
-        self.diff_tab.pack(fill="both", expand=True)
+        # diff_frame = self.tabs.add("Diff")
+        # self.diff_tab = DiffTab(diff_frame, self)
+        # self.diff_tab.pack(fill="both", expand=True)
 
         self.load_first_image()
 
         self.bind_all("<Key>", self.handle_keys)
 
-    def load_first_image(self):
-        from core.image_loader import discover_images
+    
+    def get_resample_filter(self):
+        # will maybe add this with a dropdown, I will see
+        return Image.LANCZOS
+
 
     def load_first_image(self):
         # Discover files in both folders
@@ -86,6 +96,9 @@ class ImageCompareApp(ctk.CTk):
             self.current_view = "output"
         elif key == "space":
             self.compare_tab.canvas.reset_view()
+        elif key == "p":
+            self.current_view = "diff"
+
 
         elif key == "left":
             self.prev_image()

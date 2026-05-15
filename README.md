@@ -57,8 +57,6 @@ python main.py
 ```
 
 
-
-
 # Screenshot
 ![Quick screengrab of the UI](img/screenshot.png)
 

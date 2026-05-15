@@ -26,6 +26,7 @@ class CompareTab(ctk.CTkFrame):
         # Sidebar
         sidebar = ctk.CTkFrame(self, width=300)
         sidebar.grid(row=2, column=0, sticky="ns")
+        
         # VIEWER MODE BUTTONS
         self.diff_label = ctk.CTkLabel(sidebar, text="--- VIEWER MODE ---", text_color="#246AD3")
         self.diff_label.pack(padx=10, pady=(20,0), anchor="center")
@@ -58,6 +59,7 @@ class CompareTab(ctk.CTkFrame):
             text="Previous",
             command=self.controller.prev_image,
             fg_color="#1FAF3F",
+            hover_color="#20571B",
         ).pack(side="left", expand=True, fill="x", padx=(0, 5))
 
         ctk.CTkButton(
@@ -65,6 +67,7 @@ class CompareTab(ctk.CTkFrame):
             text="Next",
             command=self.controller.next_image,
             fg_color="#1FAF3F",
+            hover_color="#20571B",
         ).pack(side="right", expand=True, fill="x", padx=(5, 0))
 
         self.diff_opacity = ctk.DoubleVar(value=0.5)

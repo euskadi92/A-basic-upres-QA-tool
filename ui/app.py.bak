@@ -1,5 +1,4 @@
 import customtkinter as ctk
-import sys
 from tkinter import filedialog
 from ui.compare_tab import CompareTab
 from ui.diff_tab import DiffTab
@@ -22,10 +21,13 @@ class ImageCompareApp(ctk.CTk):
         self.current_file = None
         self.root_dir = None
         
-        self.root_dir = Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).parent.parent
 
-        self.gt_dir = self.root_dir / "ground-truth"
-        self.out_dir = self.root_dir / "output"
+        root = self._select_root_folder()
+        if root is None:
+            root = Path(".")
+        self.root_dir = root
+        self.gt_dir = root / "ground-truth"
+        self.out_dir = root / "output"
 
         self.diff_engine = DiffEngine(self.gt_dir, self.out_dir)
 
@@ -48,13 +50,11 @@ class ImageCompareApp(ctk.CTk):
         self.gt_dir = root / "ground-truth"
         self.out_dir = root / "output"
         self.current_dir_label.configure(text=f"Current directory: {root}")
-        self.diff_engine = DiffEngine(self.gt_dir, self.out_dir) 
-        self.compare_tab.diff_cache = {}                         
         self.load_first_image()
 
     def _build_ui(self):
         # Add directory display bar at the top
-        self.top_frame = ctk.CTkFrame(self, bg_color="#FEFFBA", width=300)
+        self.top_frame = ctk.CTkFrame(self)
         self.top_frame.pack(fill="x", padx=10, pady=5)
 
         self.current_dir_label = ctk.CTkLabel(
